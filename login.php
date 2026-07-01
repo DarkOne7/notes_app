@@ -1,3 +1,43 @@
+<?php
+session_start();
+include './db.php';
+
+$error = '';
+
+if (isset($_SESSION['user_id'])) {
+    header('Location: index.php');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if (empty($username) || empty($password)) {
+        $error = 'Username and password are required.';
+    } else {
+        $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE username = ?");
+        if ($stmt) {
+            $stmt->bind_param("s", $username);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+
+            if ($user && password_verify($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                header('Location: index.php');
+                exit;
+            } else {
+                $error = 'Invalid username or password.';
+            }
+            $stmt->close();
+        } else {
+            $error = 'Database error: ' . $conn->error;
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,47 +48,6 @@
     <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
-    <?php
-    session_start();
-    include './db.php';
-
-    $error = '';
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $username = trim($_POST['username'] ?? '');
-        $password = $_POST['password'] ?? '';
-
-        if (empty($username) || empty($password)) {
-            $error = 'Username and password are required.';
-        } else {
-            $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE username = ?");
-            if ($stmt) {
-                $stmt->bind_param("s", $username);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $user = $result->fetch_assoc();
-
-                if ($user && password_verify($password, $user['password'])) {
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['username'] = $user['username'];
-                    header('Location: index.php');
-                    exit;
-                } else {
-                    $error = 'Invalid username or password.';
-                }
-                $stmt->close();
-            } else {
-                $error = 'Database error: ' . $conn->error;
-            }
-        }
-    }
-
-    if (isset($_SESSION['user_id'])) {
-        header('Location: index.php');
-        exit;
-    }
-    ?>
-
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
@@ -74,6 +73,10 @@
                             </div>
                             <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
                         </form>
+
+                        <div class="alert alert-info" role="alert">
+                            Use <strong>admin</strong> / <strong>admin123</strong> to login as the dummy admin user.
+                        </div>
 
                         <p class="text-center">Don't have an account? <a href="register.php">Register here</a></p>
                     </div>
