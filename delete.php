@@ -1,5 +1,12 @@
 <?php
+session_start();
 include './db.php';
+
+$user_id = $_SESSION['user_id'] ?? null;
+if (!$user_id) {
+    header('Location: login.php');
+    exit;
+}
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header('Location: index.php?error=' . urlencode('Invalid note id'));
@@ -7,25 +14,21 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $id = (int)$_GET['id'];
-$deleteQuery = "DELETE FROM `notes` WHERE `id` = ?";
-$stmt = mysqli_prepare($conn, $deleteQuery);
-mysqli_stmt_bind_param($stmt, 'i', $id);
-$result = mysqli_stmt_execute($stmt);
-mysqli_stmt_close($stmt);
+$stmt = $conn->prepare("DELETE FROM `notes` WHERE `id` = ? AND `user_id` = ?");
+if ($stmt) {
+    $stmt->bind_param("ii", $id, $user_id);
+    $result = $stmt->execute();
+    $stmt->close();
 
-if ($result) {
-    header('Location: index.php?deleted=1');
-    echo '<div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>Success!</strong> Note deleted successfully.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>';
-    exit;
+    if ($result) {
+        header('Location: index.php?deleted=1');
+        exit;
+    } else {
+        header('Location: index.php?error=' . urlencode('Failed to delete note'));
+        exit;
+    }
 } else {
-    header('Location: index.php?error=' . urlencode(mysqli_error($conn)));
-    echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error!</strong> ' . mysqli_error($conn) . '
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>';
+    header('Location: index.php?error=' . urlencode('Database error: ' . $conn->error));
     exit;
 }
 ?>
