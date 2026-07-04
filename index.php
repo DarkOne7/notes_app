@@ -11,8 +11,8 @@
     if (isset($_POST['submit'])) {
       $title = $_POST['title'];
       $desc = $_POST['desc'];
-      $sql = "INSERT INTO `notes` (`title`, `description`) VALUES ('$title', '$desc')";
-      $result = mysqli_query($conn, $sql);
+      $user_id = $_SESSION['user_id'];
+      $sql = "INSERT INTO `notes` (`user_id`, `title`, `description`) VALUES ('$user_id', '$title', '$desc')";      $result = mysqli_query($conn, $sql);
       if ($result) {
         echo '<div class="alert alert-success alert-dismissible fade show" role="alert">
                 <strong>Success!</strong> Your note has been added successfully.
