@@ -9,8 +9,8 @@
     include "./navBar.php";
     include "db.php";
     if (isset($_POST['submit'])) {
-      $title = $_POST['title'];
-      $desc = $_POST['desc'];
+      $title = htmlspecialchars($_POST['title']);
+      $desc = htmlspecialchars($_POST['desc']);
       $user_id = $_SESSION['user_id'];
       $sql = "INSERT INTO `notes` (`user_id`, `title`, `description`) VALUES ('$user_id', '$title', '$desc')";      $result = mysqli_query($conn, $sql);
       if ($result) {
